@@ -1,11 +1,12 @@
 package nostr
 
 import (
-	"crypto/sha256"
+    "fmt"
 	"encoding/hex"
 	"strconv"
 
 	"github.com/mailru/easyjson"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // Event represents a Nostr event.
@@ -26,14 +27,17 @@ func (evt Event) String() string {
 
 // GetID computes the event ID abd returns it as a hex string.
 func (evt *Event) GetID() string {
-	h := sha256.Sum256(evt.Serialize())
-	return hex.EncodeToString(h[:])
+    message := evt.Serialize()
+	prefixedMessage := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(message), message)
+	h:= crypto.Keccak256Hash([]byte(prefixedMessage))
+	return hex.EncodeToString(h.Bytes())
 }
 
 // CheckID checks if the implied ID matches the given ID more efficiently.
 func (evt *Event) CheckID() bool {
-	ser := evt.Serialize()
-	h := sha256.Sum256(ser)
+    message := evt.Serialize()
+	prefixedMessage := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(message), message)
+	h:= crypto.Keccak256Hash([]byte(prefixedMessage))
 
 	const hextable = "0123456789abcdef"
 
